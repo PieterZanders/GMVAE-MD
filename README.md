@@ -1,68 +1,61 @@
-# Gaussian Mixture Variational AutoEncoders (GMVAE) for MD analysis #
+# Gaussian Mixture Variational AutoEncoders (GMVAE) for MD Analysis
 
-This code is an updated version of the GMVAE implementation by Yasemin Bozkurt Varolgunes, which can be found https://github.com/yabozkurt/gmvae. 
-Changes have been made to ensure compatibility with TensorFlow 2.
+This repository provides a framework for analyzing molecular dynamics (MD) trajectories using Gaussian Mixture Variational AutoEncoders (GMVAE). The code is designed to process molecular dynamics (MD) trajectories, performing dimensionality reduction and identifying conformational clusters to reveal insights into the molecular system's underlying dynamics.
 
-The following text was obtained from the article: Interpretable embeddings from molecular simulations using Gaussian mixture variational autoencoders 
-(https://doi.org/10.1088/2632-2153/ab80b7)
+## Features
+- Process molecular dynamics trajectories: Load and Fit Trajectory (Gaussian wRMSD).
+- Performs dimensionality reduction.
+- Gaussian mixture modeling for clustering.
+- Optional: Time-lagged data GMVAE training in order to capture time dependencies and identify slow modes.
 
-GMVAE architecture and training hyperparameters:
+## Usage
 
-The GMVAE algorithm is implemented in Tensorflow 2.5.0. Training was performed in all cases with fully-connected layers, 
-using the Adam optimization algorithm. The Softmax activation function was used for probabilistic cluster assignments, 
-while ReLu activation functions were employed in all hidden layers. The means were obtained without any activation, 
-whereas Softplus activation was employed to obtain the variances. Below shows the hyperparameters and their default values used. 
-Default values were employed wherever the parameters are not specified. The NN(·)’s correspond to the neural networks labeled. 
-NN(Qy) performs probabilistic cluster assignments, NN(Qz) is for learning the moments of each Gaussian distribution in the encoding, 
-whereas NN(Pz) and NN(Px) are for the decoding of the z and x, respectively.
-The lengths of the ‘Number of nodes’ entries correspond to the number of hidden layers. Hyperparameter optimization was carried out as follows. 
-The number of nodes in the decoder (NN(Px)) was then increased whenever a large and non-decreasing reconstruction loss was observed. 
-In other studies the overall observation for the previous  examples is that the learning rate 
-and batch size should be kept relatively low to promote the formation of distinct clusters. The VAE results (with unimodal Gaussian prior) 
-that are provided as comparison are obtained using k = 1, while keeping the remaining parameters equal to the values in the corresponding GMVAE model.
+You can run the main script with the following command-line arguments:
 
-Understanding the Algorithm:
+```bash
+usage: main.py [-h] [--pdb_path PDB_PATH] [--xtc_path XTC_PATH] [--condition CONDITION] [--norm NORM] [--partition PARTITION] [--stride STRIDE] [--fit_traj] [--ref_pdb REF_PDB] [--sfactor SFACTOR]
+               [--hyperparameters HYPERPARAMETERS] [--time_lag TIME_LAG] [--load_model LOAD_MODEL] [--train_model] [--seed SEED]
+```
 
-First, data points are probabilistically assigned to k clusters (NN(Qy)). Q(y|x) represents these cluster assignment probabilities, 
-and has a multinomial distribution. Since each cluster is assumed to have Gaussian distribution in the latent space, the mean and
-variance of each of these Gaussians (Q(z|x, y)) are learned via the encoder part of the neural network (NN(Qz)). 
-The low-dimensional representation, z, is then obtained by first sampling and then taking the expected value of these samples, 
-i.e. z = sum_{i=0}^{k-1} (p(y_i|x)z_i. As the first step in decoding, the moments of the corresponding low-dimensional representation z 
-is learned by NN(Pz) from each Gaussian-distributed individual cluster y_i , which is then followed by a sampling operation. 
-P(y) in the decoder is assumed to be uniformly distributed among the k clusters. Next, using the encodings, z_i ’s, 
-the associated x reconstructions are obtained again by sampling from the x' by the NN(Px). Similar to the encoder, 
-the decoder obtains a fixed reconstruction by taking the expected value of x'_i ’s.
+### Arguments:
+- `--pdb_path PDB_PATH` : Path to the PDB file.
+- `--xtc_path XTC_PATH` : Path to the XTC trajectory file.
+- `--condition CONDITION` : Specific condition for the analysis (name of the experiment).
+- `--norm NORM` : Normalization option (standard | minmax).
+- `--partition PARTITION` : Partitioning scheme for the data.
+- `--stride STRIDE` : Stride value of the trajectory frames.
+- `--fit_traj` : Flag to fit the trajectory: Gaussian wRMSD.
+- `--ref_pdb REF_PDB` : Path to the reference PDB file for fitting.
+- `--sfactor SFACTOR` : Scaling factor for the Gaussian wRMSD.
+- `--hyperparameters HYPERPARAMETERS` : Path to the GMVAE hyperparameters configuration file.
+- `--time_lag TIME_LAG` : Time lag for time-lagged GMVAE.
+- `--load_model LOAD_MODEL` : Path to load a pre-trained model.
+- `--train_model` : Flag to train the model.
+- `--seed SEED` : Random seed for reproducibility.
 
-HYPERPARAMETERS:										
-												
-  '--traj_file'  :  Path to trajectory (npy file)						
-  '--k'          :  Number of mixture components (default=5)							
-  '--n_x'        :  Number of observable dimensions (reconstruction dimensions = 3)			
-  '--n_z'        :  Number of hidden dimensions (default = 1)					
-  '--n_epochs'   :  Number of epochs (default = 50)						
-  '--qy_dims'    :  Iterable of hidden dimensions in qy subgraph (default = 32)			
-  '--qz_dims'    :  Iterable of hidden dimensions in qz subgraph (default = 16)			
-  '--pz_dims'    :  Iterable of hidden dimensions in pz subgraph (default = 16)				
-  '--px_dims'    :  Iterable of hidden dimensions in px subgraph (default = 128			
-  '--r_nent'     :  Constant for weighting negative entropy term in the loss (default = 0.05)	
-  '--batch_size' :  Number of samples in each batch (default = 517)				
-  '--lr'         :  Learning rate (default = 0.0001)					
+## Dependencies
 
+The following dependencies are required to run the code:
 
-Dependencies and Modules (CTE-Power - BSC-CNS HPC):
-    
-   module load atlas/3.10.3 
-	       scalapack/2.0.2 
-               szip/2.1.1  
-               gcc/8.3.0 
-               cuda/10.2 
-               cudnn/7.6.4 
-               nccl/2.4.8 
-               tensorrt/6.0.1 
-               openmpi/4.0.1 
-               fftw/3.3.8 
-               ffmpeg/4.2.1 
-               opencv/4.1.1 
-               python/3.7.4_ML 
-               tensorflow/2.5.0 
-               anaconda3/2020.02
+- `pytorch=2.3.0`
+- `numpy=1.26.4`
+- `mdtraj=1.9.9`
+- `mdanalysis=2.7.0`
+- `sklearn=1.5.0`
+- `scipy=1.13.0`
+- `matplotlib=3.8.4`
+- `tqdm=4.66.4`
+
+## Background
+
+This implementation is an updated version of the GMVAE developed by Yasemin Bozkurt Varolgunes. The original repository can be found [here](https://github.com/yabozkurt/gmvae) (Tensorflow 1). The updates in this repository ensure compatibility with newer versions of PyTorch.
+
+### Reference
+
+This project is inspired by the article:
+"Interpretable embeddings from molecular simulations using Gaussian mixture variational autoencoders"
+(https://doi.org/10.1088/2632-2153/ab80b7).
+
+## Workflow
+
+Jupyter notebooks are included as workflow examples to demonstrate the Gaussian Mixture Variational AutoEncoders (GMVAE) framework. These notebooks provide step-by-step guides on loading trajectories, preprocessing data, training models, and analyzing results.
